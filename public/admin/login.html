@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Login — Peninsula Cyber</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="icon" href="/images/logo.svg" type="image/svg+xml" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/style.css" />
+  <link rel="stylesheet" href="/admin/css/admin.css" />
+</head>
+<body class="admin-body">
+  <div class="admin-login-wrapper">
+    <div class="card admin-login-card">
+      <div class="text-center login-header">
+        <img src="/images/logo.svg" alt="" width="48" height="48" />
+        <h1 class="login-title">Peninsula Cyber Admin</h1>
+      </div>
+      <form id="login-form" novalidate>
+        <div class="form-field">
+          <label for="username">Username</label>
+          <input type="text" id="username" name="username" autocomplete="username" required />
+        </div>
+        <div class="form-field">
+          <label for="password">Password</label>
+          <input type="password" id="password" name="password" autocomplete="current-password" required />
+        </div>
+        <button class="btn btn-primary w-full" type="submit">Log in</button>
+        <p id="login-error" class="form-error mt-16" role="alert"></p>
+      </form>
+      <p class="text-center mt-16"><a class="btn-tertiary" href="/index.html">&larr; Back to site</a></p>
+    </div>
+  </div>
+
+  <script src="/admin/js/login.js"></script>
+</body>
+</html>

@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mailing List — Peninsula Cyber Admin</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="icon" href="/images/logo.svg" type="image/svg+xml" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/style.css" />
+  <link rel="stylesheet" href="/admin/css/admin.css" />
+</head>
+<body class="admin-body">
+  <div class="admin-shell">
+    <aside class="admin-sidebar">
+      <a class="brand" href="/admin/dashboard.html">
+        <img src="/images/logo.svg" alt="" width="32" height="32" />
+        <span class="brand-name">Peninsula Cyber</span>
+      </a>
+      <nav aria-label="Admin">
+        <a href="/admin/dashboard.html">Dashboard</a>
+        <a href="/admin/events.html">Events</a>
+        <a href="/admin/subscribers.html" class="active">Mailing List</a>
+      </nav>
+    </aside>
+
+    <main class="admin-main">
+      <div class="admin-topbar">
+        <h1>Mailing List</h1>
+        <div class="action-row">
+          <button class="btn btn-secondary btn-sm" id="sync-all-btn">Sync all to HubSpot</button>
+          <a class="btn btn-secondary btn-sm" href="/api/subscribers/export.csv">Export CSV</a>
+          <button class="btn btn-secondary btn-sm" data-logout>Log out</button>
+        </div>
+      </div>
+
+      <p id="sync-status" role="status" aria-live="polite" class="form-helper"></p>
+
+      <div class="admin-table-wrapper">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Email</th>
+              <th>Name</th>
+              <th>Subscribed</th>
+              <th>HubSpot</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="subscribers-table-body">
+            <tr><td colspan="5">Loading subscribers…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+
+  <script src="/admin/js/admin-common.js"></script>
+  <script src="/admin/js/subscribers-admin.js"></script>
+</body>
+</html>

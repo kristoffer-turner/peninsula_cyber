@@ -1,0 +1,5 @@
+
+> peninsula-cyber@1.0.0 start
+> node server/index.js
+
+Peninsula Cyber site running at http://localhost:3000

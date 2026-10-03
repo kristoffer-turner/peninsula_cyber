@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Contact — Peninsula Cyber</title>
+  <meta name="description" content="Get in touch with Peninsula Cyber or join our mailing list for seminar updates." />
+  <link rel="icon" href="/images/logo.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to main content</a>
+
+  <header class="site-header">
+    <div class="container nav-wrapper">
+      <a class="brand" href="/index.html">
+        <img src="/images/logo.svg" alt="" />
+        <span class="brand-name">Peninsula Cyber</span>
+      </a>
+      <button class="nav-toggle" aria-expanded="false" aria-controls="main-nav" aria-label="Toggle navigation menu">☰</button>
+      <nav class="main-nav" id="main-nav" aria-label="Primary">
+        <a href="/index.html">Home</a>
+        <a href="/about.html">About</a>
+        <a href="/services.html">Seminars</a>
+        <a href="/events.html">Events</a>
+        <a href="/resources.html">Resources</a>
+        <a href="/contact.html" class="active">Contact</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="hero">
+      <div class="container">
+        <h1>Get in touch</h1>
+        <p>Questions, seminar requests, or just want to say hello? We'd love to hear from you.</p>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container content-sm">
+        <div class="card mb-48">
+          <h2>Join our mailing list</h2>
+          <p>Get occasional updates about new seminars and simple security tips. We'll never share your information or spam your inbox.</p>
+          <form data-newsletter-form novalidate>
+            <div class="form-field">
+              <label for="newsletter-first-name">First name (optional)</label>
+              <input type="text" id="newsletter-first-name" name="firstName" autocomplete="given-name" />
+            </div>
+            <div class="form-field">
+              <label for="newsletter-email">Email address</label>
+              <input type="email" id="newsletter-email" name="email" autocomplete="email" required />
+            </div>
+            <button class="btn btn-primary" type="submit">Sign up</button>
+            <p data-form-status role="status" aria-live="polite"></p>
+          </form>
+        </div>
+
+        <div class="card">
+          <h2>Send us a message</h2>
+          <p>For seminar requests or general questions, email us directly and we'll get back to you within a couple of days.</p>
+          <p class="text-lg">
+            <a href="mailto:hello@peninsulacyber.org">hello@peninsulacyber.org</a>
+          </p>
+          <p class="form-helper">Prefer to talk it through? Mention a good time to call in your email and we'll follow up.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div>
+          <h4>Peninsula Cyber</h4>
+          <p class="footer-tagline">Security that makes sense for everyone.</p>
+        </div>
+        <div>
+          <h4>Explore</h4>
+          <ul>
+            <li><a href="/about.html">About Us</a></li>
+            <li><a href="/services.html">Seminars</a></li>
+            <li><a href="/events.html">Events</a></li>
+            <li><a href="/resources.html">Resources</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Get in touch</h4>
+          <ul>
+            <li><a href="/contact.html">Contact us</a></li>
+            <li><a href="mailto:hello@peninsulacyber.org">hello@peninsulacyber.org</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>&copy; <span data-current-year></span> Peninsula Cyber. Serving Kitsap County, WA.</span>
+        <a href="/admin/login.html">Admin</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard — Peninsula Cyber Admin</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="icon" href="/images/logo.svg" type="image/svg+xml" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/style.css" />
+  <link rel="stylesheet" href="/admin/css/admin.css" />
+</head>
+<body class="admin-body">
+  <div class="admin-shell">
+    <aside class="admin-sidebar">
+      <a class="brand" href="/admin/dashboard.html">
+        <img src="/images/logo.svg" alt="" width="32" height="32" />
+        <span class="brand-name">Peninsula Cyber</span>
+      </a>
+      <nav aria-label="Admin">
+        <a href="/admin/dashboard.html" class="active">Dashboard</a>
+        <a href="/admin/events.html">Events</a>
+        <a href="/admin/subscribers.html">Mailing List</a>
+      </nav>
+    </aside>
+
+    <main class="admin-main">
+      <div class="admin-topbar">
+        <h1>Dashboard</h1>
+        <button class="btn btn-secondary btn-sm" data-logout>Log out</button>
+      </div>
+
+      <div class="stat-grid">
+        <div class="card stat-card">
+          <div class="stat-value" id="stat-upcoming-events">–</div>
+          <div class="stat-label">Upcoming events</div>
+        </div>
+        <div class="card stat-card">
+          <div class="stat-value" id="stat-subscribers">–</div>
+          <div class="stat-label">Mailing list subscribers</div>
+        </div>
+        <div class="card stat-card">
+          <div class="stat-value" id="stat-synced">–</div>
+          <div class="stat-label">Synced to HubSpot</div>
+        </div>
+        <div class="card stat-card">
+          <div class="stat-value" id="stat-rsvps">–</div>
+          <div class="stat-label">Event RSVPs</div>
+        </div>
+      </div>
+
+      <div class="feature-grid">
+        <div class="card">
+          <h3>Manage Events</h3>
+          <p>Add, edit, or remove upcoming seminars shown on the public Events page.</p>
+          <a class="btn btn-primary btn-sm" href="/admin/events.html">Go to Events</a>
+        </div>
+        <div class="card">
+          <h3>Manage Mailing List</h3>
+          <p>Review subscribers and sync them to HubSpot for email campaigns.</p>
+          <a class="btn btn-primary btn-sm" href="/admin/subscribers.html">Go to Mailing List</a>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="/admin/js/admin-common.js"></script>
+  <script src="/admin/js/dashboard.js"></script>
+</body>
+</html>

@@ -1,0 +1,22 @@
+[
+  {
+    "id": "evt-001",
+    "title": "Spotting Phishing Emails & Scam Calls",
+    "date": "2026-09-12",
+    "time": "10:00 AM - 11:30 AM",
+    "location": "Kitsap Regional Library, Poulsbo Branch",
+    "description": "A friendly, no-jargon workshop on recognizing phishing emails, fake text messages, and scam phone calls. Bring your questions and, if you'd like, your own phone or laptop for hands-on practice.",
+    "registrationUrl": "",
+    "capacity": 30
+  },
+  {
+    "id": "evt-002",
+    "title": "Password Basics for Families",
+    "date": "2026-10-03",
+    "time": "2:00 PM - 3:30 PM",
+    "location": "Bremerton Senior Center",
+    "description": "Learn simple, practical habits for creating strong passwords and using a password manager, explained in plain language. Great for grandparents and grandkids alike.",
+    "registrationUrl": "",
+    "capacity": 25
+  }
+]
