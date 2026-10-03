@@ -256,6 +256,7 @@ Realistically **~$5–6/month** all-in, not counting the domain registration its
 
 ## Troubleshooting
 
+- **Page loads but has no styling, no events, and the nav menu/forms don't work**: you're viewing the site over plain `http://` with `NODE_ENV=production`. In production the app sends a `Content-Security-Policy: upgrade-insecure-requests` header, which tells the browser to fetch the CSS/JS/images over `https://` — that fails until TLS is set up in step 9. Fix it by either finishing step 9 and browsing the `https://` URL, or temporarily setting `NODE_ENV=development` in `.env` and running `pm2 restart peninsula-cyber --update-env`. (Check the browser's DevTools console/network tab — you'll see the CSS and JS requests failing with `ERR_SSL_PROTOCOL_ERROR` or `ERR_CONNECTION_REFUSED` against an `https://` address.) Switch back to `production` once HTTPS works.
 - **502 Bad Gateway from Nginx**: the Node app isn't running or isn't listening on port 3000. Check `pm2 status` and `pm2 logs peninsula-cyber`.
 - **Admin login fails with "Cognito is not configured on the server"**: one of `COGNITO_REGION` / `COGNITO_USER_POOL_ID` / `COGNITO_CLIENT_ID` is missing from `.env` on the server (not your local machine).
 - **Admin login fails with "Cognito authentication failed: Could not load credentials from any providers"**: the AWS SDK can't find any AWS credentials at all. Confirm `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` are actually set in the server's `.env` (step 2), then `pm2 restart peninsula-cyber` — env vars are only read at process start.

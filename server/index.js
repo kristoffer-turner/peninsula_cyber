@@ -27,6 +27,10 @@ app.use(
         scriptSrc: ["'self'"],
         imgSrc: ["'self'", 'data:'],
         connectSrc: ["'self'"],
+        // Helmet adds this by default. Over plain HTTP (e.g. testing on a
+        // bare server IP before TLS is set up) it makes browsers rewrite every
+        // CSS/JS/image request to https:// and fail, leaving an unstyled page.
+        upgradeInsecureRequests: isProduction ? [] : null,
       },
     },
   })
