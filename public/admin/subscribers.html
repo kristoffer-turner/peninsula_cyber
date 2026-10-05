@@ -28,13 +28,10 @@
       <div class="admin-topbar">
         <h1>Mailing List</h1>
         <div class="action-row">
-          <button class="btn btn-secondary btn-sm" id="sync-all-btn">Sync all to HubSpot</button>
           <a class="btn btn-secondary btn-sm" href="/api/subscribers/export.csv">Export CSV</a>
           <button class="btn btn-secondary btn-sm" data-logout>Log out</button>
         </div>
       </div>
-
-      <p id="sync-status" role="status" aria-live="polite" class="form-helper"></p>
 
       <div class="admin-table-wrapper">
         <table class="admin-table">
@@ -43,12 +40,11 @@
               <th>Email</th>
               <th>Name</th>
               <th>Subscribed</th>
-              <th>HubSpot</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody id="subscribers-table-body">
-            <tr><td colspan="5">Loading subscribers…</td></tr>
+            <tr><td colspan="4">Loading subscribers…</td></tr>
           </tbody>
         </table>
       </div>

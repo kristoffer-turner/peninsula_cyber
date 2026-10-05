@@ -141,18 +141,6 @@ table.admin-table tr:last-child td {
   border-bottom: none;
 }
 
-.badge {
-  display: inline-block;
-  padding: 4px 10px;
-  border-radius: 999px;
-  font-size: 13px;
-  font-family: var(--font-heading);
-  font-weight: 500;
-}
-
-.badge-success { background-color: #e3f3e6; color: #245a2e; }
-.badge-pending { background-color: #fef3c7; color: #78350f; }
-
 @media (max-width: 900px) {
   .admin-shell { flex-direction: column; }
   .admin-sidebar { width: auto; display: flex; align-items: center; justify-content: space-between; }

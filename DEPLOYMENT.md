@@ -4,9 +4,9 @@ This guide deploys the site to a single **AWS Lightsail** instance running Node 
 
 ## Why Lightsail, and not App Runner / ECS / Lambda
 
-This app stores events, subscribers, and RSVPs as JSON files on local disk (`server/data/`), and keeps admin sessions in the Node process's memory. Both of those assumptions **require the app to run as one long-lived process on one instance with a persistent disk.**
+This app stores events, subscribers, and RSVPs in a SQLite database file on local disk (`server/data/peninsula.db`), and keeps admin sessions in the Node process's memory. Both of those assumptions **require the app to run as one long-lived process on one instance with a persistent disk.**
 
-Serverless and container platforms (Lambda, App Runner, Fargate) either wipe local disk between requests/deploys or run multiple instances behind a load balancer — either way, your event/subscriber data and logged-in sessions would silently disappear or become inconsistent. Using one of those platforms *correctly* would mean first migrating `server/store.js` to a real database (e.g., DynamoDB) and sessions to a shared store (e.g., DynamoDB or ElastiCache) — real work, and out of scope for "host this site."
+Serverless and container platforms (Lambda, App Runner, Fargate) either wipe local disk between requests/deploys or run multiple instances behind a load balancer — either way, your event/subscriber data and logged-in sessions would silently disappear or become inconsistent. Using one of those platforms *correctly* would mean first moving the database to a shared server (e.g., RDS Postgres or DynamoDB) and sessions to a shared store (e.g., DynamoDB or ElastiCache) — real work, and out of scope for "host this site."
 
 A single Lightsail instance matches what this app actually is: a low-traffic community site that doesn't need to scale horizontally. You get a persistent disk, a static IP, snapshots for backup, and a predictable ~$5–10/month bill. If Peninsula Cyber ever outgrows this (multiple redundant instances, real traffic spikes), that's the point to migrate storage and revisit hosting — not before.
 
@@ -24,7 +24,6 @@ Browser → Route 53 (DNS) → Lightsail static IP → Nginx (:443, TLS) → Nod
 - The [AWS CLI](https://aws.amazon.com/cli/) installed and configured (`aws configure`) on your own machine — used for a couple of one-off commands, not required on the server itself.
 - A domain name you control (for DNS + HTTPS). You can skip DNS/TLS and use the Lightsail-assigned IP over plain HTTP for initial testing, but don't run the real site that way — see "Force HTTPS" below.
 - The Cognito User Pool from [README.md](README.md#admin-authentication-aws-cognito) already created, with its User Pool ID and App Client ID in hand.
-- Your own HubSpot values, if you're connecting that (optional — see README).
 
 ---
 
@@ -70,8 +69,8 @@ SSH in (Lightsail's browser-based SSH button works, or `ssh -i your-key.pem ubun
 ```bash
 sudo apt update && sudo apt upgrade -y
 
-# Node 20 LTS via NodeSource
-curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+# Node 22 via NodeSource (the app needs 22.13+ for its built-in SQLite)
+curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
 sudo apt install -y nodejs
 
 # Nginx (reverse proxy + TLS termination) and Certbot (free TLS certs)
@@ -80,8 +79,13 @@ sudo apt install -y nginx certbot python3-certbot-nginx
 # pm2 (keeps Node running, restarts it on crash or reboot)
 sudo npm install -g pm2
 
-node --version   # confirm v20.x
+# sqlite3 command-line tool (used for backups, see "Backups" below)
+sudo apt install -y sqlite3
+
+node --version   # confirm v22.13 or newer
 ```
+
+> **Already deployed with Node 20?** The earlier version of this guide installed Node 20, which is too old for this release (and past its end-of-life). Upgrade in place with the two NodeSource lines above (the `setup_22.x` one, then `sudo apt install -y nodejs`), then run `sudo apt install -y sqlite3 && pm2 update`. No other server changes are needed.
 
 ## 4. Get the code onto the instance
 
@@ -131,7 +135,7 @@ Fill in:
 - `PORT=3000`
 - `COGNITO_REGION`, `COGNITO_USER_POOL_ID`, `COGNITO_CLIENT_ID`, `COGNITO_CLIENT_SECRET` (if applicable) — from your Cognito setup.
 - `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` — the access key pair from step 2.
-- HubSpot variables, if connecting that.
+- `DATABASE_PATH` — optional; leave blank to use `server/data/peninsula.db` inside the checkout (it's git-ignored, so `git pull` never touches it).
 
 `.env` is already in `.gitignore`, so it's never committed — you set it independently on every environment.
 
@@ -139,7 +143,7 @@ Fill in:
 
 ```bash
 cd ~/peninsula-cyber
-pm2 start server/index.js --name peninsula-cyber
+pm2 start server/index.js --name peninsula-cyber --node-args="--disable-warning=ExperimentalWarning"
 pm2 save
 pm2 startup    # prints a command — copy/paste and run it, so pm2 restarts on reboot
 ```
@@ -148,7 +152,10 @@ Verify it's up locally on the instance:
 
 ```bash
 curl -I http://localhost:3000/index.html   # expect HTTP/1.1 200 OK
+ls -l server/data/peninsula.db             # created automatically on first start
 ```
+
+The database starts empty — add your seminars under **Admin → Events** once you can log in. (Any events, RSVPs or signups stored by the older JSON-file version of this app are **not** carried over; `server/data/*.json` is no longer read and can be deleted whenever you like.)
 
 ## 7. Configure Nginx as a reverse proxy
 
@@ -232,15 +239,16 @@ pm2 restart peninsula-cyber
 
 ## Backups
 
-Everything that matters and isn't already safe elsewhere lives in `server/data/*.json` on this one instance's disk:
+Everything that matters lives in one file: `server/data/peninsula.db` (events, RSVPs, and the mailing list). It contains **people's names and email addresses**, so treat backups with the same care as the live file — a private S3 bucket, never public, never in git.
 
-- **Lightsail automatic snapshots**: instance page → **Snapshots** tab → enable automatic daily snapshots. This is the simplest safety net — it backs up the whole disk, not just the data files.
-- **Lighter-weight option**: cron a copy of `server/data/` to S3:
+- **Lightsail automatic snapshots**: instance page → **Snapshots** tab → enable automatic daily snapshots. This is the simplest safety net — it backs up the whole disk.
+- **A copy of just the data, to S3** (belt and braces). Don't `cp` or `s3 sync` the live file directly — a copy taken mid-write can be corrupt. SQLite's `.backup` command takes a consistent copy while the app keeps running:
   ```bash
   # crontab -e
-  0 3 * * * aws s3 sync ~/peninsula-cyber/server/data s3://your-backup-bucket/peninsula-cyber-data/
+  0 3 * * * sqlite3 ~/peninsula-cyber/server/data/peninsula.db ".backup /tmp/peninsula-backup.db" && aws s3 cp /tmp/peninsula-backup.db s3://your-backup-bucket/peninsula-$(date +\%F).db && rm /tmp/peninsula-backup.db
   ```
-  (Requires the AWS CLI installed on the instance and either the same IAM role extended with `s3:PutObject` on that bucket, or separate credentials.)
+  (Requires the AWS CLI on the instance with credentials allowed to `s3:PutObject` on that bucket, and the `sqlite3` package from step 3. Add an S3 lifecycle rule to expire old copies so you aren't keeping subscriber emails forever.)
+- **Restoring**: stop the app (`pm2 stop peninsula-cyber`), replace `server/data/peninsula.db` with the backup copy, then `pm2 start peninsula-cyber`.
 
 ## Cost estimate
 
@@ -260,6 +268,9 @@ Realistically **~$5–6/month** all-in, not counting the domain registration its
 - **502 Bad Gateway from Nginx**: the Node app isn't running or isn't listening on port 3000. Check `pm2 status` and `pm2 logs peninsula-cyber`.
 - **Admin login fails with "Cognito is not configured on the server"**: one of `COGNITO_REGION` / `COGNITO_USER_POOL_ID` / `COGNITO_CLIENT_ID` is missing from `.env` on the server (not your local machine).
 - **Admin login fails with "Cognito authentication failed: Could not load credentials from any providers"**: the AWS SDK can't find any AWS credentials at all. Confirm `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` are actually set in the server's `.env` (step 2), then `pm2 restart peninsula-cyber` — env vars are only read at process start.
-- **Admin login fails with `NotAuthorizedException`**: either the password is wrong, or the App Client doesn't have `ALLOW_ADMIN_USER_PASSWORD_AUTH` enabled (see README step 2), or the instance's IAM role/credentials don't grant `cognito-idp:AdminInitiateAuth`.
+- **Admin login says the auth flow is "not enabled for this client"**: the Cognito App Client doesn't have `ALLOW_ADMIN_USER_PASSWORD_AUTH` turned on (README step 2). This is an AWS-side setting; no app restart needed.
+- **Admin login says "Invalid username or password"** when you're sure they're right: check the user's status in Cognito is *Confirmed* with a permanent password set (not *Force change password*), and that `COGNITO_CLIENT_SECRET` is filled in if your App Client was created with a secret.
+- **Admin login fails with an `AccessDeniedException` / "not authorized to perform cognito-idp:AdminInitiateAuth"**: the IAM user whose keys are in `.env` is missing the policy from step 2.
 - **Certbot fails to get a certificate**: almost always DNS hasn't propagated yet, or port 80 isn't reachable (check the Lightsail firewall). Run `dig +short yourdomain.org` and confirm it matches the static IP before retrying.
-- **Changes to `server/data/*.json` disappear after a redeploy**: if you're re-copying the whole project directory (via `scp -r` or a fresh `git clone` into a new folder) instead of updating in place, you'll overwrite the live data files with the ones from your local machine. Always update in place (`git pull` inside the existing `~/peninsula-cyber` checkout), never redeploy by replacing the whole directory.
+- **Events, RSVPs, or signups vanished after a redeploy**: the database is the file `server/data/peninsula.db`. If you replace the whole project folder (a fresh `git clone` into a new directory, or `scp -r` over the top) you get a brand-new empty database. Always update in place with `git pull` inside the existing `~/peninsula-cyber` checkout — the database file is git-ignored, so pulling never touches it.
+- **`ERR_UNKNOWN_BUILTIN_MODULE: node:sqlite`, or the app won't start after a `git pull`**: the server's Node is older than 22.13. Check `node --version` and upgrade as described in step 3.

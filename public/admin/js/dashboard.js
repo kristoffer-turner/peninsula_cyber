@@ -11,7 +11,6 @@ async function loadDashboard() {
 
     document.getElementById('stat-upcoming-events').textContent = events.length;
     document.getElementById('stat-subscribers').textContent = subscribers.length;
-    document.getElementById('stat-synced').textContent = subscribers.filter((s) => s.hubspot?.synced).length;
     document.getElementById('stat-rsvps').textContent = rsvps.length;
   } catch (err) {
     console.error('Failed to load dashboard stats', err);

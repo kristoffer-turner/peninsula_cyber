@@ -1,3 +1,9 @@
 node_modules/
 .env
 *.log
+
+# Live data (RSVPs and mailing-list emails are personal data; never commit them)
+server/data/*.db
+server/data/*.db-journal
+server/data/*.db-wal
+server/data/*.db-shm

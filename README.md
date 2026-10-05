@@ -1,6 +1,6 @@
 # Peninsula Cyber Website
 
-A static community website for Peninsula Cyber, with a small Express backend that powers an admin panel for managing the events page and a HubSpot-linked mailing list.
+A static community website for Peninsula Cyber, with a small Express backend that powers an admin panel for managing events, event RSVPs, and a mailing list — all stored in a local SQLite database.
 
 ## Structure
 
@@ -12,16 +12,17 @@ public/            Public site (plain HTML/CSS/JS) + admin panel (also static HT
 server/
   index.js          Express app: static hosting, sessions, security headers
   routes/           auth.js, events.js, subscribers.js, rsvps.js (the API)
-  data/             events.json, subscribers.json, rsvps.json — simple JSON file storage
-  hubspot.js        HubSpot Forms API + Contacts API integration
+  db.js             SQLite database (events, subscribers, RSVPs) — schema is created on first start
+  csv.js            CSV export helper for the admin panel
+  data/             where the database file lives (peninsula.db, git-ignored)
   cognito.js        Verifies admin login credentials against an AWS Cognito User Pool
 ```
 
-There's no build step — the public pages are plain HTML files served directly by Express, and the "database" is a few JSON files on disk. That's intentional: this is a low-traffic community nonprofit site, and a full database/framework would be more to maintain than the content justifies. If the site outgrows this, the natural next step is swapping `server/store.js` for a real database without touching the routes' public API.
+There's no build step — the public pages are plain HTML files served directly by Express, and the "database" is a single SQLite file on disk. That's intentional: this is a low-traffic community nonprofit site, and a database server would be more to maintain than the content justifies. SQLite still gives you real constraints (no duplicate RSVPs or subscribers), safe writes, and one file to back up. If the site outgrows it, the queries are all in `server/routes/` and `server/db.js`.
 
 ## Setup
 
-Requires Node.js 18+ (for the built-in `fetch` used to call HubSpot).
+Requires **Node.js 22.13 or newer** — the app uses Node's built-in `node:sqlite`, so there's no database to install and no native module to compile.
 
 ```bash
 npm install
@@ -31,7 +32,7 @@ cp .env.example .env
 Fill in `.env`:
 - `SESSION_SECRET` — any long random string.
 - `COGNITO_REGION` / `COGNITO_USER_POOL_ID` / `COGNITO_CLIENT_ID` — see "Admin authentication (AWS Cognito)" below. Without these, `/admin/login.html` will reject every login attempt with a clear "Cognito is not configured" error, but the rest of the site works fine.
-- HubSpot variables — see below. The site runs fine without them; signups are just stored locally until HubSpot is configured.
+- `DATABASE_PATH` — optional. Defaults to `server/data/peninsula.db`.
 
 Run it:
 
@@ -41,23 +42,25 @@ npm start
 
 Then visit `http://localhost:3000`. The admin panel is at `http://localhost:3000/admin/login.html`.
 
-## Connecting HubSpot
+## Data storage
 
-Two separate integrations, both optional but recommended together:
+Everything visitors submit is stored in one SQLite file, `server/data/peninsula.db` (or wherever `DATABASE_PATH` points). The tables are created automatically the first time the server starts, so there's nothing to set up.
 
-1. **Public newsletter signup → HubSpot Forms API** (`HUBSPOT_PORTAL_ID`, `HUBSPOT_FORM_ID`)
-   - In HubSpot, create a form under **Marketing > Forms** with an `email`, `firstname`, and `lastname` field (firstname/lastname optional).
-   - Open the form and find its **Form ID** (in the embed code or the form's settings URL).
-   - Find your **Portal ID (Hub ID)** under **Settings > Account Setup > Account Defaults**.
-   - Every signup on `/contact.html` is submitted to this form automatically, so it shows up in HubSpot with whatever workflows/lists you've attached to that form.
+| Table | What's in it | Who can see it |
+|---|---|---|
+| `events` | The seminars shown on the public Events page | Public (read), admins (edit) |
+| `rsvps` | Name + email per event, one row per person per event | Admins only |
+| `subscribers` | Mailing-list signups (email, optional name) | Admins only |
 
-2. **Admin panel sync → HubSpot Contacts API** (`HUBSPOT_PRIVATE_APP_TOKEN`)
-   - In HubSpot, go to **Settings > Integrations > Private Apps > Create a private app**.
-   - Grant the `crm.objects.contacts.read` and `crm.objects.contacts.write` scopes.
-   - Copy the generated token into `.env`.
-   - This powers the "Sync" / "Sync all to HubSpot" buttons on the admin Mailing List page, which create or update contacts directly — useful for backfilling subscribers who signed up before HubSpot was connected, or if a form submission failed.
+Things the database enforces for you:
+- **No duplicates.** The same email (in any capitalisation) can only appear once per event's RSVPs, and once on the mailing list. RSVPing again just updates the name.
+- **No orphaned RSVPs.** Deleting an event deletes its RSVPs with it.
 
-Every subscriber is always saved locally first, regardless of HubSpot configuration, so no signups are lost if HubSpot is briefly unreachable or not yet set up.
+**The file contains personal data** (names and email addresses), which is why `server/data/*.db` is in `.gitignore` — never commit it. Back it up as described in [DEPLOYMENT.md](DEPLOYMENT.md#backups).
+
+**Getting the data out:** Admin → Mailing List → *Export CSV*, and the *Export CSV* button in each event's RSVP list. Exports neutralise spreadsheet formulas, so a malicious name like `=HYPERLINK(...)` shows up as plain text instead of running when you open the file in Excel.
+
+**Sending email:** this site collects addresses but doesn't send any email itself — the RSVP form promises reminders only, so something else has to send them. A good fit on AWS is [Amazon SES](https://aws.amazon.com/ses/) (about $0.10 per 1,000 emails). If you start sending newsletters, include an unsubscribe link in every message; that's a legal requirement (CAN-SPAM) as well as good practice.
 
 ## Admin authentication (AWS Cognito)
 
@@ -71,7 +74,7 @@ The admin panel (`/admin/*`) is the only part of this site with a login — the 
    - MFA: optional, off by default. You can turn it on later; this app doesn't currently handle an MFA challenge, so leave it off unless you're ready to extend `server/cognito.js` to respond to it.
 2. **Create an App Client** under that pool (Console → your pool → *App integration* → *App clients* → *Create app client*).
    - Client type: leave it as a standard client. A client secret is optional — either works, just set `COGNITO_CLIENT_SECRET` in `.env` if you generate one.
-   - **Authentication flows**: check **"ALLOW_ADMIN_USER_PASSWORD_AUTH"**. This app calls `AdminInitiateAuth` server-side, which requires this flow to be explicitly enabled — login will fail with `NotAuthorizedException` if it isn't.
+   - **Authentication flows**: check **"ALLOW_ADMIN_USER_PASSWORD_AUTH"**. This app calls `AdminInitiateAuth` server-side, which requires this flow to be explicitly enabled. If it isn't, the login form shows an error saying the auth flow is "not enabled for this client". You can turn it on later: *App clients* → your client → *Edit* → *Authentication flows* → tick **"Sign in with server-side administrative credentials (ALLOW_ADMIN_USER_PASSWORD_AUTH)"**. It's a setting on the AWS side, so no restart of this app is needed.
 3. **Create an admin user** (Console → your pool → *Users* → *Create user*, or via CLI):
    ```bash
    aws cognito-idp admin-create-user \
@@ -107,4 +110,4 @@ This is a lightweight admin panel appropriate for a small nonprofit site, not a 
 - Run it behind HTTPS (set `NODE_ENV=production` so session cookies require `secure`).
 - Keep `.env` out of version control (already covered by `.gitignore`).
 - The login endpoint is rate-limited (10 attempts / 15 minutes) to slow down brute-forcing, but consider adding a hosting-level firewall/allowlist too if this is only ever used by one or two staff.
-- Sessions are in-memory (Express's default store) and the JSON files in `server/data/` live on local disk — both assume a **single, always-on instance**. This is fine for the traffic this site expects (see [DEPLOYMENT.md](DEPLOYMENT.md), which deploys exactly that), but don't point a load balancer at multiple instances of this app without first moving sessions to a shared store and `server/data/` to a real database — otherwise different requests will randomly see different logged-in states and different event/subscriber data.
+- Sessions are in-memory (Express's default store) and the SQLite file in `server/data/` lives on local disk — both assume a **single, always-on instance**. This is fine for the traffic this site expects (see [DEPLOYMENT.md](DEPLOYMENT.md), which deploys exactly that), but don't point a load balancer at multiple instances of this app without first moving sessions to a shared store and the database to a shared server (e.g. Postgres) — otherwise each instance would have its own separate set of events/RSVPs/subscribers and its own logged-in sessions.
